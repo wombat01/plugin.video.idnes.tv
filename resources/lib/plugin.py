@@ -30,7 +30,7 @@ def root():
     listing = []
     list_item = xbmcgui.ListItem(_addon.getLocalizedString(30001))
     list_item.setArt({'icon': 'DefaultRecentlyAddedEpisodes.png'})
-    listing.append((plugin.url_for(get_list,  show_url = _baseurl+'archiv'), list_item, True))
+    listing.append((plugin.url_for(get_list, category_id = 'recent', show_url = _baseurl+'archiv'), list_item, True))
     
     list_item = xbmcgui.ListItem(_addon.getLocalizedString(30002))
     list_item.setArt({'icon': 'DefaultTVShows.png'})
@@ -58,7 +58,7 @@ def list_shows():
         list_item = xbmcgui.ListItem(label=name)
         list_item.setInfo('video', {'mediatype': 'tvshow', 'title': name, 'plot': url})
         list_item.setArt({'icon': thumb})
-        listing.append((plugin.url_for(get_list, show_url = url), list_item, True))
+        listing.append((plugin.url_for(get_list, category_id = 'list', show_url = url), list_item, True))
         
     xbmcplugin.addDirectoryItems(plugin.handle, listing, len(listing))
     xbmcplugin.endOfDirectory(plugin.handle)
@@ -74,28 +74,32 @@ def list_news():
         name = porad.find('a').get_text()
         url = 'https:'+porad.find('a')['href']
         list_item = xbmcgui.ListItem(label=name)
-        listing.append((plugin.url_for(get_list, show_url = url), list_item, True))
+        listing.append((plugin.url_for(get_list, category_id = 'list', show_url = url), list_item, True))
         
     xbmcplugin.addDirectoryItems(plugin.handle, listing, len(listing))
     xbmcplugin.endOfDirectory(plugin.handle)
     
-@plugin.route('/get_list')
-def get_list():
+@plugin.route('/get_list/<category_id>')
+def get_list(category_id):
     xbmcplugin.setContent(plugin.handle, 'episodes')
     url = plugin.args['show_url'][0]
-    soup = BeautifulSoup(get_page(url), 'html.parser') #+"/"+str(page)
+    soup = BeautifulSoup(get_page(url), 'html.parser')
     items = soup.find('div', {'class': 'entry-list'}).find_all('div', {'class': 'entry'})
     count = 0
     listing = []
     for item in items:
         title = item.find('h3').get_text()
+        if category_id == 'recent':
+            show_title = item.find('a', {'class': 'isle-link'}).get_text()
+            title = '[COLOR blue]'+show_title+'[/COLOR] · '+title
+            
         dur = item.find('span', {'class': 'length'}).get_text()
         if dur:
             l = dur.strip().split(':')
             duration = 0
             for pos, value in enumerate(l[::-1]):
-                duration += int(value) * 60 ** pos
-
+                duration += int(value) * 60 ** pos 
+        
         video_id = item.find('a', {'class': 'art-link'})['data-id']
         date = datetime.datetime(*(time.strptime(item.find('span', {'class': 'time'})['datetime'], "%Y-%m-%dT%H:%M:%S")[:6])).strftime("%Y-%m-%d")
         thumb = 'https:'+(re.search('url\(\'(.+)\'\)', item.find('div', {'class': 'art-img'})['style'])).group(1)
@@ -107,8 +111,11 @@ def get_list():
         listing.append((plugin.url_for(get_video, video_id), list_item, False))
         count += 1
     
-    next_url = soup.find('a', {'class': 'btn btn-on'})['href']
-    
+    try:
+        next_url = soup.find('a', {'class': 'btn btn-on'})['href']
+    except:
+        next_url = ''
+        
     #fix pro Rozstrel
     if 'strana' in next_url:
         next_url = url+next_url
@@ -116,7 +123,7 @@ def get_list():
     if next_url:
         list_item = xbmcgui.ListItem(label=_addon.getLocalizedString(30003))
         list_item.setArt({'icon': 'DefaultFolder.png'})
-        listing.append((plugin.url_for(get_list, show_url = next_url), list_item, True))
+        listing.append((plugin.url_for(get_list, category_id = category_id, show_url = next_url), list_item, True))
     
     xbmcplugin.addDirectoryItems(plugin.handle, listing, len(listing))
     xbmcplugin.endOfDirectory(plugin.handle)
