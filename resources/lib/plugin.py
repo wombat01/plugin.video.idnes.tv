@@ -53,10 +53,10 @@ def list_shows():
     for porad in porady:
         name = porad.find('h3').get_text()
         url = porad.find('a', {'class': 'art-link'})['href']
-        thumb = 'https:'+(re.search('url\(\'(.+)\'\)', porad.find('div', {'class': 'art-img'})['style'])).group(1)
+        thumb = normalize_url(re.search('url\(\'(.+)\'\)', porad.find('div', {'class': 'art-img'})['style']).group(1))
         
         list_item = xbmcgui.ListItem(label=name)
-        list_item.setInfo('video', {'mediatype': 'tvshow', 'title': name, 'plot': url})
+        list_item.setInfo('video', {'mediatype': 'tvshow', 'title': name})
         list_item.setArt({'icon': thumb})
         listing.append((plugin.url_for(get_list, category_id = 'list', show_url = url), list_item, True))
         
@@ -72,7 +72,7 @@ def list_news():
     listing = []
     for porad in porady:
         name = porad.find('a').get_text()
-        url = 'https:'+porad.find('a')['href']
+        url = normalize_url(porad.find('a')['href'])
         list_item = xbmcgui.ListItem(label=name)
         listing.append((plugin.url_for(get_list, category_id = 'list', show_url = url), list_item, True))
         
@@ -85,31 +85,34 @@ def get_list(category_id):
     url = plugin.args['show_url'][0]
     soup = BeautifulSoup(get_page(url), 'html.parser')
     items = soup.find('div', {'class': 'entry-list'}).find_all('div', {'class': 'entry'})
-    count = 0
     listing = []
     for item in items:
+        menuitems = []
         title = item.find('h3').get_text()
+        video_id = item.find('a', {'class': 'art-link'})['data-id']
+        date = datetime.datetime(*(time.strptime(item.find('span', {'class': 'time'})['datetime'], "%Y-%m-%dT%H:%M:%S")[:6])).strftime("%Y-%m-%d")
+
+        thumb = (re.search('url\(\'(.+)\'\)', item.find('div', {'class': 'art-img'})['style'])).group(1)
+        dur = item.find('span', {'class': 'length'}).get_text()
+        
         if category_id == 'recent':
+            show_id = normalize_url(item.find('a', {'class': 'isle-link'})['href'])
             show_title = item.find('a', {'class': 'isle-link'}).get_text()
             title = '[COLOR blue]'+show_title+'[/COLOR] · '+title
+            menuitems.append(( _addon.getLocalizedString(30005), 'XBMC.Container.Update('+plugin.url_for(get_list, category_id = 'list', show_url = show_id)+')' ))
             
-        dur = item.find('span', {'class': 'length'}).get_text()
         if dur:
             l = dur.strip().split(':')
             duration = 0
             for pos, value in enumerate(l[::-1]):
                 duration += int(value) * 60 ** pos 
-        
-        video_id = item.find('a', {'class': 'art-link'})['data-id']
-        date = datetime.datetime(*(time.strptime(item.find('span', {'class': 'time'})['datetime'], "%Y-%m-%dT%H:%M:%S")[:6])).strftime("%Y-%m-%d")
-        thumb = 'https:'+(re.search('url\(\'(.+)\'\)', item.find('div', {'class': 'art-img'})['style'])).group(1)
             
         list_item = xbmcgui.ListItem(title)
-        list_item.setInfo('video', {'mediatype': 'episode', 'title': title, 'duration': duration, 'premiered': date})
-        list_item.setArt({'icon': thumb})
+        list_item.setInfo('video', {'mediatype': 'episode', 'title': title, 'duration': duration, 'premiered': date})           
+        list_item.setArt({'icon': normalize_url(thumb)})
         list_item.setProperty('IsPlayable', 'true')
+        list_item.addContextMenuItems(menuitems)
         listing.append((plugin.url_for(get_video, video_id), list_item, False))
-        count += 1
     
     try:
         next_url = soup.find('a', {'class': 'btn btn-on'})['href']
@@ -130,13 +133,22 @@ def get_list(category_id):
   
 @plugin.route('/get_video/<video_id>')
 def get_video(video_id):  
-    xml = BeautifulSoup(get_page(_videourl+"?idvideo="+video_id))
-    server = 'https://'+xml.find("server").get_text()
+    xml = BeautifulSoup(get_page(_videourl+"?idvideo="+video_id), 'html.parser')
+    server = xml.find("server").get_text()
     videofile = xml.find("linkvideo").find("file", {'quality': 'high'}).get_text()
-    stream_url = server + "/" + videofile
+    stream_url = 'https://'+server + "/" + videofile
        
     list_item = xbmcgui.ListItem(path=stream_url)
     xbmcplugin.setResolvedUrl(plugin.handle, True, list_item)
+
+def normalize_url(url):
+    url = url.replace("http://","https://")
+    if url.startswith('//'):
+        return 'https:' + url
+    if not url.startswith('https://'):
+        return _baseurl + url
+        
+    return url
 
 def run():
     plugin.run()
