@@ -23,7 +23,7 @@ _videourl = 'https://servix.idnes.cz/media/video.aspx'
 def list_shows():
     xbmcplugin.setContent(plugin.handle, 'tvshows')
     soup = BeautifulSoup(get_page(_baseurl+'porady'), 'html.parser')
-    porady = soup.find('div', {'class': 'entry-list'}).find_all('div', {'class': 'entry entry-square'})´
+    porady = soup.find('div', {'class': 'entry-list'}).find_all('div', {'class': 'entry entry-square'})
     listing = []
     for porad in porady:
         title = porad.find('h3').get_text()
