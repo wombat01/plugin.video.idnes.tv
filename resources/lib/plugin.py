@@ -90,14 +90,14 @@ def get_list():
         list_item.setProperty('IsPlayable', 'true')
         list_item.addContextMenuItems(menuitems)
         listing.append((plugin.url_for(get_video, video_id), list_item, False))
-    #hack pro Rozstrel
-    next_url = soup.find('a', {'class': 'btn btn-on'})['href'] 
-    if 'strana' in next_url:
-        next_url = url+next_url
+        
+    next_url = soup.find('a', {'class': 'btn btn-on'})
     if next_url:
+        if 'strana' in next_url:
+            next_url = url+next_url['href'] 
         list_item = xbmcgui.ListItem(label=_addon.getLocalizedString(30003))
         list_item.setArt({'icon': 'DefaultFolder.png'})
-        listing.append((plugin.url_for(get_list,  show_url = next_url, category = category), list_item, True))
+        listing.append((plugin.url_for(get_list,  show_url = next_url['href'] , category = category), list_item, True))
 
     xbmcplugin.addDirectoryItems(plugin.handle, listing, len(listing))
     xbmcplugin.endOfDirectory(plugin.handle)
