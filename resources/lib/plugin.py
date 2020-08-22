@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import routing
-
 import xbmc
 import xbmcaddon
 import xbmcgui
 import xbmcplugin
-
 import re
 import time
 import datetime
@@ -25,8 +23,7 @@ _videourl = 'https://servix.idnes.cz/media/video.aspx'
 def list_shows():
     xbmcplugin.setContent(plugin.handle, 'tvshows')
     soup = BeautifulSoup(get_page(_baseurl+'porady'), 'html.parser')
-    porady = soup.find('div', {'class': 'entry-list'}).find_all('div', {'class': 'entry entry-square'})
-
+    porady = soup.find('div', {'class': 'entry-list'}).find_all('div', {'class': 'entry entry-square'})´
     listing = []
     for porad in porady:
         title = porad.find('h3').get_text()
@@ -46,7 +43,6 @@ def list_news():
     xbmcplugin.setContent(plugin.handle, 'tvshows')
     soup = BeautifulSoup(get_page(_baseurl), 'html.parser')
     porady = soup.find('menu', {'id': 'menu'}).find('ul').find_all('li')
-
     listing = []
     for porad in porady:
         title = porad.find('a').get_text()
