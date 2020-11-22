@@ -77,7 +77,7 @@ def get_list():
             show_id = normalize_url(item.find('a', {'class': 'isle-link'})['href'])
             show_title = item.find('a', {'class': 'isle-link'}).get_text()
             title_label = '[COLOR blue]{0}[/COLOR] · {1}'.format(show_title, title)
-            menuitems.append(( _addon.getLocalizedString(30005), 'XBMC.Container.Update('+plugin.url_for(get_list, show_url = show_id, category = 0)+')' ))
+            menuitems.append(( _addon.getLocalizedString(30005), 'Container.Update('+plugin.url_for(get_list, show_url = show_id, category = 0)+')' ))
         if dur:
             l = dur.strip().split(':')
             duration = 0
