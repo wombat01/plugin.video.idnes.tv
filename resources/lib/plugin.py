@@ -64,7 +64,7 @@ def get_list():
     listing = []
     for item in items:
         menuitems = []
-        title = item.find('h3').get_text().encode('utf-8')
+        title = item.find('h3').get_text()
         video_id = item.find('a', {'class': 'art-link'})['data-id']
         date = datetime.datetime(*(time.strptime(item.find('span', {'class': 'time'})['datetime'], "%Y-%m-%dT%H:%M:%S")[:6])).strftime("%Y-%m-%d")
         title_label = title
@@ -72,10 +72,10 @@ def get_list():
         dur = item.find('span', {'class': 'length'}).get_text()
         show_title = soup.find('div', {'class': 'opener-in'})
         if show_title:
-            show_title = show_title.find('h1').get_text().encode('utf-8')
+            show_title = show_title.find('h1').get_text()
         if category == 1:
             show_id = normalize_url(item.find('a', {'class': 'isle-link'})['href'])
-            show_title = item.find('a', {'class': 'isle-link'}).get_text().encode('utf-8')
+            show_title = item.find('a', {'class': 'isle-link'}).get_text()
             title_label = '[COLOR blue]{0}[/COLOR] · {1}'.format(show_title, title)
             menuitems.append(( _addon.getLocalizedString(30005), 'XBMC.Container.Update('+plugin.url_for(get_list, show_url = show_id, category = 0)+')' ))
         if dur:
